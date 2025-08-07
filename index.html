@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>我们的纪念日</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      font-family: "Arial", sans-serif;
+      color: white;
+      text-align: center;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .overlay {
+      background-color: rgba(0,0,0,0.5);
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 1;
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    h1 { font-size: 3em; margin-bottom: 20px; }
+    .timer { font-size: 2em; margin-top: 10px; }
+    audio { display: none; }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="content">
+    <h1>我们在一起的日子</h1>
+    <div class="timer" id="loveDays"></div>
+    <div class="timer" id="beijingTime"></div>
+  </div>
+
+  <audio id="bgm" autoplay loop>
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    // 纪念日（设置成你们的纪念日）
+    const startDate = new Date("2022-05-20T00:00:00");
+
+    function updateDays() {
+      const now = new Date();
+      const diffTime = now - startDate;
+      const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      document.getElementById('loveDays').innerText = `我们已经在一起 ${days} 天啦 💖`;
+    }
+
+    function updateBeijingTime() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const beijing = new Date(utc + 8 * 3600000);
+      document.getElementById("beijingTime").innerText = "北京时间：" + beijing.toLocaleTimeString();
+    }
+
+    setInterval(updateDays, 1000 * 60 * 60); // 每小时更新一次天数
+    setInterval(updateBeijingTime, 1000); // 每秒更新一次时间
+    updateDays();
+    updateBeijingTime();
+  </script>
+</body>
+</html>
