@@ -19,11 +19,10 @@
       height: 100%;
       font-family: "Arial", sans-serif;
       color: white;
+      overflow: hidden;
       background: url('background.jpg') no-repeat center center fixed;
       background-size: cover;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      position: relative;
     }
 
     .overlay {
@@ -45,8 +44,9 @@
     }
 
     h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1.5rem;
+      font-size: 2.8rem;
+      margin-bottom: 1rem;
+      font-weight: bold;
     }
 
     .timer {
@@ -55,28 +55,35 @@
     }
 
     .heart {
-      font-size: 2rem;
+      font-size: 2.2rem;
       display: inline-block;
       animation: heartbeat 1s infinite;
     }
 
     @keyframes heartbeat {
-      0%, 100% {
-        transform: scale(1);
-      }
-      25% {
-        transform: scale(1.2);
-      }
-      50% {
-        transform: scale(0.95);
-      }
-      75% {
-        transform: scale(1.1);
-      }
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.2); }
+      50% { transform: scale(0.95); }
+      75% { transform: scale(1.1); }
+    }
+
+    .record-player {
+      margin: 2rem auto;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #eee 10%, #444 60%, #111 100%);
+      animation: spin 4s linear infinite;
+      border: 4px solid white;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .music-control {
-      margin-top: 2rem;
+      margin-top: 1rem;
     }
 
     .music-control button {
@@ -94,23 +101,23 @@
       background-color: rgba(255, 255, 255, 0.4);
     }
 
-    /* 响应式调整 */
+    /* 粒子动画 */
+    .particles {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     @media (max-width: 768px) {
-      h1 {
-        font-size: 2rem;
-      }
-      .timer {
-        font-size: 1.2rem;
-      }
+      h1 { font-size: 2rem; }
+      .timer { font-size: 1.2rem; }
     }
 
     @media (max-width: 480px) {
-      h1 {
-        font-size: 1.5rem;
-      }
-      .timer {
-        font-size: 1rem;
-      }
+      h1 { font-size: 1.5rem; }
+      .timer { font-size: 1rem; }
     }
 
     audio {
@@ -121,12 +128,13 @@
 <body>
 
   <div class="overlay"></div>
+  <canvas class="particles"></canvas>
 
   <div class="content">
-    <h1>我和蓉蛋在一起的日子 <span class="heart">❤️</span></h1>
-    <div class="timer" id="loveDays"></div>
+    <h1>和蓉蛋在一起的第 <span id="loveDays"></span> 天 <span class="heart">❤️</span></h1>
     <div class="timer" id="beijingTime"></div>
 
+    <div class="record-player" id="record"></div>
     <div class="music-control">
       <button id="musicToggle">播放音乐 🎵</button>
     </div>
@@ -143,7 +151,7 @@
       const now = new Date();
       const diffTime = now - startDate;
       const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      document.getElementById('loveDays').innerText = 我们已经在一起 ${days} 天啦;
+      document.getElementById('loveDays').textContent = days;
     }
 
     function updateBeijingTime() {
@@ -158,9 +166,9 @@
     updateDays();
     updateBeijingTime();
 
-    // 音乐播放控制
     const audio = document.getElementById('bgm');
     const toggleBtn = document.getElementById('musicToggle');
+    const record = document.getElementById('record');
 
     const unlockAudio = () => {
       audio.muted = false;
@@ -176,11 +184,54 @@
       if (audio.paused) {
         audio.play();
         toggleBtn.textContent = '暂停音乐 ⏸️';
+        record.style.animationPlayState = 'running';
       } else {
         audio.pause();
         toggleBtn.textContent = '播放音乐 🎵';
+        record.style.animationPlayState = 'paused';
       }
     });
+
+    // 粒子爱心动画
+    const canvas = document.querySelector('.particles');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function createParticle() {
+      const x = Math.random() * canvas.width;
+      const y = canvas.height + 10;
+      const size = Math.random() * 10 + 10;
+      const speed = Math.random() * 1 + 0.5;
+      const opacity = Math.random();
+      particles.push({ x, y, size, speed, opacity });
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255, 100, 150, 0.6)";
+      ctx.font = "15px sans-serif";
+      particles.forEach((p, i) => {
+        ctx.globalAlpha = p.opacity;
+        ctx.fillText("❤", p.x, p.y);
+        p.y -= p.speed;
+        if (p.y < -20) particles.splice(i, 1);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function animateParticles() {
+      if (particles.length < 100) createParticle();
+      drawParticles();
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
   </script>
 
 </body>
