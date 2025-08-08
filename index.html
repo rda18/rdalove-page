@@ -19,26 +19,37 @@
       height: 100%;
       font-family: "Arial", sans-serif;
       color: white;
-      background: url('background.jpg') no-repeat center center fixed;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('background.jpg');
       background-size: cover;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background-position: center center;
+      background-repeat: no-repeat;
+      z-index: -2;
     }
 
     .overlay {
       background-color: rgba(0, 0, 0, 0.5);
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
     }
 
     .content {
       position: relative;
-      z-index: 2;
+      z-index: 1;
       max-width: 90%;
       padding: 2rem;
       text-align: center;
@@ -61,18 +72,10 @@
     }
 
     @keyframes heartbeat {
-      0%, 100% {
-        transform: scale(1);
-      }
-      25% {
-        transform: scale(1.2);
-      }
-      50% {
-        transform: scale(0.95);
-      }
-      75% {
-        transform: scale(1.1);
-      }
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.2); }
+      50% { transform: scale(0.95); }
+      75% { transform: scale(1.1); }
     }
 
     .music-control {
@@ -94,27 +97,19 @@
       background-color: rgba(255, 255, 255, 0.4);
     }
 
+    audio {
+      display: none;
+    }
+
     /* 响应式调整 */
     @media (max-width: 768px) {
-      h1 {
-        font-size: 2rem;
-      }
-      .timer {
-        font-size: 1.2rem;
-      }
+      h1 { font-size: 2rem; }
+      .timer { font-size: 1.2rem; }
     }
 
     @media (max-width: 480px) {
-      h1 {
-        font-size: 1.5rem;
-      }
-      .timer {
-        font-size: 1rem;
-      }
-    }
-
-    audio {
-      display: none;
+      h1 { font-size: 1.5rem; }
+      .timer { font-size: 1rem; }
     }
   </style>
 </head>
@@ -158,7 +153,6 @@
     updateDays();
     updateBeijingTime();
 
-    // 音乐播放控制
     const audio = document.getElementById('bgm');
     const toggleBtn = document.getElementById('musicToggle');
 
@@ -185,5 +179,3 @@
 
 </body>
 </html>
-
-
