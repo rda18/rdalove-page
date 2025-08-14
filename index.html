@@ -12,6 +12,32 @@
   --fade-speed: 1000ms;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* 黑幕遮罩 */
+#black-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: black;
+  z-index: 9999;
+  opacity: 1;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 黑幕文字 */
+#intro-text {
+  color: white;
+  font-size: 2rem;
+  opacity: 0;
+  font-family: "Arial", sans-serif;
+  text-align: center;
+  transition: opacity 1.5s ease; /* 文字渐显时间 */
+}
+
+/* 背景初始状态 */
 html, body {
   height: 100%;
   font-family: var(--font-family);
@@ -19,18 +45,22 @@ html, body {
   overflow: hidden;
   background: url('background.jpg') no-repeat center center fixed;
   background-size: cover;
-  position: relative;
-  transition: background var(--fade-speed) ease-in-out;
+  filter: blur(15px) brightness(0.7);
+  opacity: 0;
+  transition: filter 2s ease, opacity 2s ease; /* 背景渐入 */
 }
-@media(max-width:768px) {
-  html, body { background-attachment: scroll; }
+body.bg-loaded {
+  filter: blur(0) brightness(1);
+  opacity: 1;
 }
+
 .overlay {
   background-color: var(--overlay-color);
   position: absolute;
   inset: 0;
   z-index: 1;
 }
+
 .content {
   position: relative;
   z-index: 2;
@@ -43,11 +73,13 @@ html, body {
   text-align: center;
   padding: 1rem;
 }
+
 h1 {
   font-size: clamp(1.8rem,5vw,2.5rem);
   margin-bottom: 1rem;
   font-weight: bold;
 }
+
 .timer {
   font-size: 1.1rem;
   margin-bottom: 1rem;
@@ -79,10 +111,10 @@ h1 {
   min-height: 2.5rem;
   white-space: pre-wrap;
   position: relative;
+  display: inline-block;
 }
-.quote::after {
-  content: "|";
-  position: absolute;
+.cursor {
+  display: inline-block;
   animation: blink 1s infinite;
 }
 @keyframes blink {
@@ -104,16 +136,24 @@ h1 {
 .music-control button:hover {
   background-color: rgba(255,255,255,.4);
 }
+
 .particles {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
 }
+
 audio { display: none; }
 </style>
 </head>
 <body>
+
+<!-- 黑幕遮罩和文字 -->
+<div id="black-overlay">
+  <div id="intro-text">我们的故事开始了…</div>
+</div>
+
 <div class="overlay"></div>
 <canvas class="particles"></canvas>
 <div class="content">
@@ -122,6 +162,7 @@ audio { display: none; }
   <div class="quote" id="quote"></div>
   <div class="music-control"><button id="musicToggle">播放音乐 🎵</button></div>
 </div>
+
 <audio id="bgm" loop>
   <source src="music.mp3" type="audio/mpeg">
 </audio>
@@ -156,29 +197,29 @@ const CONFIG = {
     "我愿意为你挡住所有风雨。",
     "这一生，有你足矣。",
     "你是我最深的执念。",
-    "你是我生命中最亮的光。",
+    "你是生命中最亮的光。",
     "和你在一起，才有了家的感觉。",
     "每一次想你，心里都开出花来。",
-    "你是我所有故事的主角。",
+    "你是所有故事的主角。",
     "你是我的今天，也是我的明天。",
     "有你在，连空气都是甜的。",
-    "你是我梦里最温柔的诗。",
-    "你是我心中永不落的星。",
+    "你是梦里最温柔的诗。",
+    "你是心中永不落的星。",
     "爱你，是我每天最想做的事。",
     "你的名字，是我唇边最美的词。",
     "我想把所有温柔都给你。",
-    "你是我生命中最幸运的遇见。",
+    "你是生命中最幸运的遇见。",
     "我会一直爱你，不论风雨。",
-    "你是我心里最柔软的地方。",
-    "你是我的避风港，也是我的方向。",
-    "你是我唯一的答案。",
+    "你是心里最柔软的地方。",
+    "你是我的避风港，也是方向。",
+    "你是唯一的答案。",
     "每一次拥抱你，都像回到家。",
     "我想和你看遍世间风景。",
-    "你是我眼里最亮的星。",
+    "你是眼里最亮的星。",
     "我愿意一生守护你。",
     "有你在的日子，才叫生活。",
-    "你是我心中的唯一选择。",
-    "我会爱你，直到时间的尽头。"
+    "你是心中的唯一选择。",
+    "我会爱你，直到时间尽头。"
   ]
 };
 
@@ -194,115 +235,102 @@ function fadeAudio(targetVolume, duration = 1000, callback) {
   function step(now) {
     const progress = Math.min((now - startTime) / duration, 1);
     audio.volume = startVolume + (targetVolume - startVolume) * progress;
-    if (progress < 1) {
-      requestAnimationFrame(step);
-    } else if (callback) callback();
+    if(progress<1) requestAnimationFrame(step);
+    else if(callback) callback();
   }
   requestAnimationFrame(step);
 }
 
-function updateDays() {
-  loveDaysEl.textContent = Math.floor((Date.now() - CONFIG.startDate) / 86400000);
+function updateDays(){
+  loveDaysEl.textContent = Math.floor((Date.now()-CONFIG.startDate)/86400000);
 }
 
-function updateBeijingTime() {
-  const now = new Date();
-  const beijing = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 8 * 3600000);
-  beijingTimeEl.textContent = "北京时间：" + beijing.toLocaleTimeString("zh-CN", { hour12: false });
+function updateBeijingTime(){
+  const now=new Date();
+  const beijing=new Date(now.getTime()+now.getTimezoneOffset()*60000+8*3600000);
+  beijingTimeEl.textContent="北京时间："+beijing.toLocaleTimeString("zh-CN",{hour12:false});
 }
 
 // 打字机效果
-let quoteIndex = 0;
-function typeWriter(text, callback) {
-  let i = 0;
-  quoteEl.textContent = "";
-  function typing() {
-    if (i < text.length) {
-      quoteEl.textContent += text.charAt(i);
+let quoteIndex=0;
+function typeWriter(text,callback){
+  let i=0;
+  quoteEl.innerHTML="";
+  const cursor=document.createElement("span");
+  cursor.className="cursor";
+  cursor.textContent="|";
+  quoteEl.appendChild(cursor);
+  function typing(){
+    if(i<text.length){
+      cursor.insertAdjacentText("beforebegin",text.charAt(i));
       i++;
-      setTimeout(typing, 80);
-    } else if (callback) {
-      setTimeout(callback, 2000);
+      setTimeout(typing,80);
+    } else if(callback){
+      setTimeout(callback,2000);
     }
   }
   typing();
 }
-function playQuotes() {
-  typeWriter(CONFIG.quotes[quoteIndex], () => {
-    quoteIndex = (quoteIndex + 1) % CONFIG.quotes.length;
+function playQuotes(){
+  typeWriter(CONFIG.quotes[quoteIndex],()=>{
+    quoteIndex=(quoteIndex+1)%CONFIG.quotes.length;
     playQuotes();
   });
 }
 
 // 粒子动画
-const canvas = document.querySelector(".particles");
-const ctx = canvas.getContext("2d");
-let particles = [];
-function resizeCanvas() {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-  particles = Array.from({ length: 30 }, createParticle);
-}
-function createParticle() {
-  return {
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    size: 10 * Math.random() + 10,
-    speed: Math.random() + 0.5,
-    opacity: Math.random()
-  };
-}
-function drawParticles() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "rgba(255,100,150,0.6)";
-  ctx.font = "15px sans-serif";
-  particles.forEach(p => {
-    ctx.globalAlpha = p.opacity;
-    ctx.fillText("❤", p.x, p.y);
-    p.y -= p.speed;
-    if (p.y < -20) Object.assign(p, createParticle(), { y: canvas.height + 10 });
-  });
-  ctx.globalAlpha = 1;
-}
+const canvas=document.querySelector(".particles");
+const ctx=canvas.getContext("2d");
+let particles=[];
+function getParticleCount(){ return window.innerWidth<768?15:30; }
+function getHeartFontSize(){ return `${15*(window.devicePixelRatio||1)}px sans-serif`; }
+function resizeCanvas(){ canvas.width=innerWidth; canvas.height=innerHeight; particles=Array.from({length:getParticleCount()},createParticle); }
+function createParticle(){ return {x:Math.random()*canvas.width,y:Math.random()*canvas.height,size:10*Math.random()+10,speed:Math.random()+0.5,opacity:Math.random()}; }
+function drawParticles(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="rgba(255,100,150,0.6)"; ctx.font=getHeartFontSize(); particles.forEach(p=>{ ctx.globalAlpha=p.opacity; ctx.fillText("❤",p.x,p.y); p.y-=p.speed; if(p.y<-20) Object.assign(p,createParticle(),{y:canvas.height+10}); }); ctx.globalAlpha=1; }
+function mainLoop(){ updateDays(); updateBeijingTime(); drawParticles(); requestAnimationFrame(mainLoop); }
 
-function mainLoop(timestamp) {
-  updateDays();
-  updateBeijingTime();
-  drawParticles();
-  requestAnimationFrame(mainLoop);
-}
+// 页面开场动画（文字渐入+渐出）
+function startPageIntro(){
+  const img=new Image();
+  img.src="background.jpg";
+  img.onload=()=>{
+    document.body.classList.add("bg-loaded");
 
-function tryAutoPlay() {
-  audio.volume = 0;
-  audio.play().then(() => {
-    fadeAudio(1, 2000);
-    toggleBtn.textContent = "暂停音乐 ⏸️";
-  }).catch(() => {
-    toggleBtn.textContent = "播放音乐 🎵";
-  });
-}
+    const introText=document.getElementById("intro-text");
+    const blackOverlay=document.getElementById("black-overlay");
 
-toggleBtn.addEventListener("click", () => {
-  if (audio.paused) {
-    audio.play().then(() => {
-      fadeAudio(1, 2000);
-      toggleBtn.textContent = "暂停音乐 ⏸️";
-    });
-  } else {
-    fadeAudio(0, 1500, () => {
-      audio.pause();
-      toggleBtn.textContent = "播放音乐 🎵";
-    });
+    // 文字渐显
+    introText.style.opacity="1";
+
+    // 文字渐显完成 + 停留1秒后渐出，黑幕同步淡出
+    setTimeout(()=>{
+      introText.style.transition="opacity 1s ease";
+      introText.style.opacity="0";
+
+      blackOverlay.style.transition="opacity 1s ease";
+      blackOverlay.style.opacity="0";
+
+      setTimeout(()=>blackOverlay.style.display="none",1000);
+    },2500);
+
+    // 音乐渐入
+    audio.volume=0;
+    audio.play().then(()=>fadeAudio(1,2000)).catch(()=>{ toggleBtn.textContent="播放音乐 🎵"; });
+
+    // 打字机语录开始
+    playQuotes();
   }
+}
+
+toggleBtn.addEventListener("click",()=>{
+  if(audio.paused){ audio.play().then(()=>fadeAudio(1,2000)); toggleBtn.textContent="暂停音乐 ⏸️"; }
+  else{ fadeAudio(0,1500,()=>{audio.pause(); toggleBtn.textContent="播放音乐 🎵";}); }
 });
 
-addEventListener("resize", resizeCanvas);
+addEventListener("resize",resizeCanvas);
 resizeCanvas();
-document.addEventListener("DOMContentLoaded", () => {
-  tryAutoPlay();
-  playQuotes();
-});
-mainLoop(0);
+document.addEventListener("DOMContentLoaded",startPageIntro);
+mainLoop();
 </script>
 </body>
 </html>
