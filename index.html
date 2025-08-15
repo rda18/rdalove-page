@@ -9,13 +9,13 @@
     html, body { height: 100%; font-family: Arial, sans-serif; color: white; overflow: hidden; background: url('background.jpg') no-repeat center center fixed; background-size: cover; position: relative; }
     .overlay { background-color: rgba(0,0,0,0.5); position: absolute; inset: 0; z-index: 1; }
     .content { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem; }
-    h1 { font-size: clamp(1.8rem,5vw,2.5rem); margin-bottom: 1rem; font-weight: bold; }
-    .timer, .date, .lunar { font-size: 1.1rem; margin-bottom: .5rem; text-align: center; }
+    h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); margin-bottom: 1rem; font-weight: bold; }
+    .timer { font-size: 1.1rem; margin-top: 0.5rem; }
     .heart { display: inline-block; font-size: 2rem; animation: heartbeat 1.5s ease-in-out infinite; transform-origin: center; }
-    @keyframes heartbeat { 0%,20%,40%,100%{transform:scale(1);} 10%,30%{transform:scale(1.3);} }
+    @keyframes heartbeat { 0%, 20%, 40%, 100% { transform: scale(1); } 10%, 30% { transform: scale(1.3); } }
     .quote { font-size: 1rem; margin-top: 1rem; max-width: 80%; line-height: 1.5; font-style: italic; min-height: 2.5rem; white-space: pre-wrap; position: relative; }
     .quote::after { content: "|"; position: absolute; animation: blink 1s infinite; }
-    @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
     .music-control { margin-top: 1.5rem; }
     .music-control button { padding: .6rem 1.2rem; font-size: 1rem; border: none; border-radius: .5rem; cursor: pointer; background-color: rgba(255,255,255,.2); color: white; transition: .3s; }
     .music-control button:hover { background-color: rgba(255,255,255,.4); }
@@ -29,8 +29,6 @@
   <div class="content">
     <h1>和蓉蛋在一起的第 <span id="loveDays"></span> 天 <span class="heart">❤️</span></h1>
     <div class="timer" id="beijingTime"></div>
-    <div class="date" id="beijingDate"></div>
-    <div class="lunar" id="lunarDate"></div>
     <div class="quote" id="quote"></div>
     <div class="music-control">
       <button id="musicToggle">播放音乐 🎵</button>
@@ -106,8 +104,6 @@
 
     const loveDaysEl = document.getElementById("loveDays");
     const beijingTimeEl = document.getElementById("beijingTime");
-    const beijingDateEl = document.getElementById("beijingDate");
-    const lunarDateEl = document.getElementById("lunarDate");
     const quoteEl = document.getElementById("quote");
     const audio = document.getElementById("bgm");
     const toggleBtn = document.getElementById("musicToggle");
@@ -134,7 +130,6 @@
     function drawParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "rgba(255,100,150,0.6)";
-      ctx.font = "15px sans-serif";
       particles.forEach(p => {
         ctx.globalAlpha = p.opacity;
         ctx.fillText("❤", p.x, p.y);
@@ -148,98 +143,50 @@
       loveDaysEl.textContent = Math.floor((Date.now() - CONFIG.startDate) / 86400000);
     }
 
-    function getLunarDate(date) {
-      return "七月廿二";
-    }
-
     function updateBeijingTime() {
-      const now = new Date();
-      const beijing = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 8 * 3600000);
-      const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-      const year = beijing.getFullYear(),
-        month = String(beijing.getMonth() + 1).padStart(2, "0"),
-        day = String(beijing.getDate()).padStart(2, "0"),
-        weekday = weekdays[beijing.getDay()];
-      beijingTimeEl.textContent = `北京时间：${year}年${month}月${day}日 ${weekday}`;
-      lunarDateEl.textContent = "农历：" + getLunarDate(beijing);
-    }
-
-    let quoteIndex = 0;
-
-    function typeWriter(text, callback) {
-      quoteEl.innerHTML = ''; 
-      let i = 0;
-      const interval = setInterval(() => {
-        quoteEl.innerHTML += text.charAt(i);
-        i++;
-        if (i >= text.length) {
-          clearInterval(interval);
-          if (callback) setTimeout(callback, 2000);
-        }
-      }, 210);
-    }
-
-    function playQuotes() {
-      typeWriter(CONFIG.quotes[quoteIndex], () => {
-        quoteIndex = (quoteIndex + 1) % CONFIG.quotes.length;
-        playQuotes();
+      const beijing = new Date();
+      const beijingOffset = 8 * 60; // 北京时间相对于UTC的时差为+8小时，单位是分钟
+      beijing.setMinutes(beijing.getMinutes() + beijingOffset);  // 加上时差，调整为北京时间
+      beijingTimeEl.textContent = beijing.toLocaleString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
       });
     }
 
-    function fadeAudio(targetVolume, duration = 1000, callback) {
-      const startVolume = audio.volume;
-      const startTime = performance.now();
-      function step(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        audio.volume = startVolume + (targetVolume - startVolume) * progress;
-        if (progress < 1) {
-          requestAnimationFrame(step);
-        } else if (callback) callback();
-      }
-      requestAnimationFrame(step);
+    function getRandomQuote() {
+      const randomIndex = Math.floor(Math.random() * CONFIG.quotes.length);
+      quoteEl.textContent = CONFIG.quotes[randomIndex];
     }
 
     function tryAutoPlay() {
-      audio.volume = 0;
-      audio.play().then(() => {
-        fadeAudio(1, 2000);
-        toggleBtn.textContent = "暂停音乐 ⏸️";
-      }).catch(() => {
-        toggleBtn.textContent = "播放音乐 🎵";
-      });
+      if (audio.paused) audio.play().catch(() => console.log("无法自动播放"));
     }
 
     toggleBtn.addEventListener("click", () => {
       if (audio.paused) {
-        audio.play().then(() => {
-          fadeAudio(1, 2000);
-          toggleBtn.textContent = "暂停音乐 ⏸️";
-        });
+        audio.play();
+        toggleBtn.textContent = "暂停音乐 ⏸️";
       } else {
-        fadeAudio(0, 1500, () => {
-          audio.pause();
-          toggleBtn.textContent = "播放音乐 🎵";
-        });
+        audio.pause();
+        toggleBtn.textContent = "播放音乐 🎵";
       }
     });
 
     function mainLoop() {
+      resizeCanvas();
+      drawParticles();
       updateDays();
       updateBeijingTime();
-      drawParticles();
       requestAnimationFrame(mainLoop);
     }
 
-    addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-
-    document.addEventListener("DOMContentLoaded", () => {
-      tryAutoPlay();
-      playQuotes();
-    });
-
+    // 初始化
+    window.addEventListener("resize", resizeCanvas);
+    getRandomQuote();
     mainLoop();
+    tryAutoPlay();
   </script>
 </body>
 </html>
-
