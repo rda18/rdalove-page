@@ -4,17 +4,19 @@
   <meta charset="UTF-8">
   <title>我和蓉蛋的纪念日</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="preload" href="music.mp3" as="audio">
+  <link rel="preload" href="background.jpg" as="image">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; font-family: Arial, sans-serif; color: white; overflow: hidden; background: url('background.jpg') no-repeat center center fixed; background-size: cover; position: relative; }
+    html, body { height: 100%; font-family: Arial, sans-serif; color: white; overflow: hidden; background: url('background-mobile.jpg') no-repeat center center fixed; background-size: cover; position: relative; }
     .overlay { background-color: rgba(0,0,0,0.5); position: absolute; inset: 0; z-index: 1; }
     .content { position: relative; z-index: 2; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem; }
-    h1 { font-size: clamp(1.8rem,5vw,2.5rem); margin-bottom: 1rem; font-weight: bold; }
+    h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin-bottom: 1rem; font-weight: bold; }
     .timer-container { font-size: 1.1rem; text-align: center; margin-bottom: 0.5rem; }
     .timer-container > div:first-child { margin-bottom: 10px; } /* 增加日期与时间之间的间距 */
     .heart { display: inline-block; font-size: 2rem; animation: heartbeat 1.5s ease-in-out infinite; transform-origin: center; }
     @keyframes heartbeat { 0%,20%,40%,100%{transform:scale(1);} 10%,30%{transform:scale(1.3);} }
-    .quote { font-size: 1rem; margin-top: 1rem; max-width: 80%; line-height: 1.5; font-style: italic; min-height: 2.5rem; white-space: pre-wrap; position: relative; }
+    .quote { font-size: 1rem; margin-top: 1rem; max-width: 80%; line-height: 1.5; font-style: italic; min-height: 2.5rem; white-space: pre-wrap; position: relative; word-break: break-word; }
     .quote::after { content: "|"; position: absolute; animation: blink 1s infinite; }
     @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
     .music-control { margin-top: 1.5rem; }
@@ -22,6 +24,20 @@
     .music-control button:hover { background-color: rgba(255,255,255,.4); }
     .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
     audio { display: none; }
+
+    /* 移动优先媒体查询 */
+    @media (min-width: 768px) {
+      body { background-image: url('background.jpg'); }
+      h1 { font-size: clamp(2rem, 5vw, 3rem); }
+      .content { padding: 2rem; }
+      .quote { max-width: 60%; font-size: 1.2rem; }
+    }
+
+    @media (min-width: 1024px) {
+      h1 { font-size: clamp(2.5rem, 6vw, 4rem); }
+      .quote { max-width: 50%; }
+      .music-control button { padding: 0.8rem 1.5rem; font-size: 1.2rem; }
+    }
   </style>
 </head>
 <body>
@@ -29,217 +45,246 @@
   <canvas class="particles"></canvas>
   <div class="content">
     <h1>和蓉蛋在一起的第 <span id="loveDays"></span> 天 <span class="heart">❤️</span></h1>
-    <div class="timer-container" id="beijingTimeContainer"></div>
+    <div class="timer-container" id="beijingTimeContainer">
+      <div id="datePart"></div>
+      <div id="timePart"></div>
+    </div>
     <div class="quote" id="quote"></div>
     <div class="music-control">
       <button id="musicToggle">播放音乐 🎵</button>
     </div>
   </div>
-  <audio id="bgm" loop>
+  <audio id="bgm" loop preload="auto">
     <source src="music.mp3" type="audio/mpeg">
   </audio>
 
   <script>
-    const CONFIG = {
-      startDate: new Date("2024-02-09T00:00:00"),
-      quotes: [
-        "有你在的日子，每一天都是情人节。",
-        "你笑起来的样子，是我见过最美的风景。",
-        "陪你走过的每一步，都是我最珍贵的回忆。",
-        "时间会老去，但我们的爱不会。",
-        "星河滚烫，你是人间理想。",
-        "我见过的风景很多，但最喜欢的还是你。",
-        "我的眼里只有你，其他人都只是背景。",
-        "我爱你，是从我看到你的那一刻开始，直到永远。",
-        "每次看到你笑，我的世界都亮了起来。",
-        "没有你，我的世界空无一物。",
-        "你是我今生最美的奇迹。",
-        "每一秒钟，和你在一起，都是幸福。",
-        "陪你到老，是我唯一的愿望。",
-        "在我心里，你是全世界最重要的人。",
-        "你的眼睛是我最想停留的地方。",
-        "每一天醒来，看到你就是我最幸福的事情。",
-        "我爱你，永远不会改变。",
-        "你是我所有思绪的源泉。",
-        "如果没有你，我的世界会没有色彩。",
-        "你是我生命中最甜蜜的困扰。",
-        "你的微笑，是我所有烦恼的解药。",
-        "跟你在一起的每一刻，都好像时间都停止了。",
-        "我的心里只有你，其他人都不重要。",
-        "爱你，是我人生最好的决定。",
-        "我愿意为你做任何事，因为你值得。",
-        "无论世界怎样变，只有你永远在我心里。",
-        "我一生的温柔，全部都给你。",
-        "你的每一个细微的动作都让我心动。",
-        "你是我此生最大的幸运。",
-        "在一起，是最美好的相遇。",
-        "如果爱有期限，那么我愿意爱你一生一世。",
-        "你在我心中永远占据最重要的位置。",
-        "我爱你比昨天更深，但比明天浅。",
-        "只要和你在一起，哪里都好。",
-        "无论何时何地，你都是我最爱的那个人。",
-        "时间能改变一切，但它改变不了我对你的爱。",
-        "你的一句“我爱你”，就是我一生最美的承诺。",
-        "我的世界因你而丰富，你是我生命中最耀眼的星。",
-        "与你相识，胜过一切的美好。",
-        "只要你在，世界就足够完美。",
-        "你是我生命中最美的记忆，无法忘怀。",
-        "你的笑，是我最想守护的风景。",
-        "遇见你是我生命中的奇迹。",
-        "我爱你，直到时间的尽头。",
-        "你是我心中的一朵花，永远不会凋谢。",
-        "每天醒来第一件事就是想你，最后一件事也是你。",
-        "你就是我所有的幸福，唯一的幸福。",
-        "在我心里，你是唯一的王者。",
-        "每一天我都在等你回眸，那是我最期待的瞬间。",
-        "爱你是我这辈子最幸运的事。",
-        "每一次呼吸都觉得你在我身边。",
-        "无论何时何地，心里始终只有你。",
-        "你是我人生的意义，爱你是我永恒的誓言。",
-        "只要你在，世界都不再孤单。",
-        "我爱你，爱你一生一世。",
-        "不管世事如何变迁，我会一直爱你。",
-        "你就是我生活中的全部，爱你直到永远。"
-      ]
-    };
+    (function() {
+      "use strict";
 
-    const loveDaysEl = document.getElementById("loveDays");
-    const beijingTimeContainerEl = document.getElementById("beijingTimeContainer");
-    const quoteEl = document.getElementById("quote");
-    const audio = document.getElementById("bgm");
-    const toggleBtn = document.getElementById("musicToggle");
-    const canvas = document.querySelector(".particles");
-    const ctx = canvas.getContext("2d");
-    let particles = [];
-
-    function resizeCanvas() {
-      canvas.width = innerWidth;
-      canvas.height = innerHeight;
-      particles = Array.from({ length: 30 }, createParticle);
-    }
-
-    function createParticle() {
-      return {
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: 10 * Math.random() + 10,
-        speed: Math.random() + 0.5,
-        opacity: Math.random()
+      const CONFIG = {
+        startDate: new Date("2024-02-09T00:00:00Z"), // 使用UTC标准化
+        quotes: [
+          "有你在的日子，每一天都是情人节。",
+          "你笑起来的样子，是我见过最美的风景。",
+          "陪你走过的每一步，都是我最珍贵的回忆。",
+          "时间会老去，但我们的爱不会。",
+          "星河滚烫，你是人间理想。",
+          "我见过的风景很多，但最喜欢的还是你。",
+          "我的眼里只有你，其他人都只是背景。",
+          "我爱你，是从我看到你的那一刻开始，直到永远。",
+          "每次看到你笑，我的世界都亮了起来。",
+          "没有你，我的世界空无一物。",
+          "你是我今生最美的奇迹。",
+          "每一秒钟，和你在一起，都是幸福。",
+          "陪你到老，是我唯一的愿望。",
+          "在我心里，你是全世界最重要的人。",
+          "你的眼睛是我最想停留的地方。",
+          "每一天醒来，看到你就是我最幸福的事情。",
+          "我爱你，永远不会改变。",
+          "你是我所有思绪的源泉。",
+          "如果没有你，我的世界会没有色彩。",
+          "你是我生命中最甜蜜的困扰。",
+          "你的微笑，是我所有烦恼的解药。",
+          "跟你在一起的每一刻，都好像时间都停止了。",
+          "我的心里只有你，其他人都不重要。",
+          "爱你，是我人生最好的决定。",
+          "我愿意为你做任何事，因为你值得。",
+          "无论世界怎样变，只有你永远在我心里。",
+          "我一生的温柔，全部都给你。",
+          "你的每一个细微的动作都让我心动。",
+          "你是我此生最大的幸运。",
+          "在一起，是最美好的相遇。",
+          "如果爱有期限，那么我愿意爱你一生一世。",
+          "你在我心中永远占据最重要的位置。",
+          "我爱你比昨天更深，但比明天浅。",
+          "只要和你在一起，哪里都好。",
+          "无论何时何地，你都是我最爱的那个人。",
+          "时间能改变一切，但它改变不了我对你的爱。",
+          "你的一句“我爱你”，就是我一生最美的承诺。",
+          "我的世界因你而丰富，你是我生命中最耀眼的星。",
+          "与你相识，胜过一切的美好。",
+          "只要你在，世界就足够完美。",
+          "你是我生命中最美的记忆，无法忘怀。",
+          "你的笑，是我最想守护的风景。",
+          "遇见你是我生命中的奇迹。",
+          "我爱你，直到时间的尽头。",
+          "你是我心中的一朵花，永远不会凋谢。",
+          "每天醒来第一件事就是想你，最后一件事也是你。",
+          "你就是我所有的幸福，唯一的幸福。",
+          "在我心里，你是唯一的王者。",
+          "每一天我都在等你回眸，那是我最期待的瞬间。",
+          "爱你是我这辈子最幸运的事。",
+          "每一次呼吸都觉得你在我身边。",
+          "无论何时何地，心里始终只有你。",
+          "你是我人生的意义，爱你是我永恒的誓言。",
+          "只要你在，世界都不再孤单。",
+          "我爱你，爱你一生一世。",
+          "不管世事如何变迁，我会一直爱你。",
+          "你就是我生活中的全部，爱你直到永远。"
+        ]
       };
-    }
 
-    function drawParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "rgba(255,100,150,0.6)";
-      ctx.font = "15px sans-serif";
-      particles.forEach(p => {
-        ctx.globalAlpha = p.opacity;
-        ctx.fillText("❤", p.x, p.y);
-        p.y -= p.speed;
-        if (p.y < -20) Object.assign(p, createParticle(), { y: canvas.height + 10 });
-      });
-      ctx.globalAlpha = 1;
-    }
+      const loveDaysEl = document.getElementById("loveDays");
+      const datePartEl = document.getElementById("datePart");
+      const timePartEl = document.getElementById("timePart");
+      const quoteEl = document.getElementById("quote");
+      const audio = document.getElementById("bgm");
+      const toggleBtn = document.getElementById("musicToggle");
+      const canvas = document.querySelector(".particles");
+      const ctx = canvas.getContext("2d");
+      let particles = [];
+      let shuffledQuotes = [...CONFIG.quotes].sort(() => Math.random() - 0.5);
+      let quoteIndex = 0;
 
-    // 独立函数，用于精确更新天数和时间
-    function updateCounters() {
-      const now = new Date();
-      // 更新恋爱天数
-      const loveDays = Math.floor((now - CONFIG.startDate) / 86400000);
-      loveDaysEl.textContent = loveDays;
-
-      // 更新北京时间，精确到秒
-      const localTimezoneOffsetMs = now.getTimezoneOffset() * 60 * 1000;
-      const beijingTimezoneOffsetMs = 8 * 3600 * 1000;
-      const beijing = new Date(now.getTime() + localTimezoneOffsetMs + beijingTimezoneOffsetMs);
-      const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-      const year = beijing.getFullYear(),
-        month = String(beijing.getMonth() + 1).padStart(2, "0"),
-        day = String(beijing.getDate()).padStart(2, "0"),
-        weekday = weekdays[beijing.getDay()];
-      const hours = String(beijing.getHours()).padStart(2, "0"),
-        minutes = String(beijing.getMinutes()).padStart(2, "0"),
-        seconds = String(beijing.getSeconds()).padStart(2, "0");
-
-      beijingTimeContainerEl.innerHTML = `<div>${year}年${month}月${day}日 ${weekday}</div><div>${hours}:${minutes}:${seconds}</div>`;
-    }
-
-    function typeWriter(text, callback) {
-      quoteEl.innerHTML = '';
-      let i = 0;
-      const interval = setInterval(() => {
-        quoteEl.innerHTML += text.charAt(i);
-        i++;
-        if (i >= text.length) {
-          clearInterval(interval);
-          if (callback) setTimeout(callback, 2000);
-        }
-      }, 210);
-    }
-
-    function playQuotes() {
-      const randomQuote = CONFIG.quotes[Math.floor(Math.random() * CONFIG.quotes.length)];
-      typeWriter(randomQuote, () => {
-        playQuotes();
-      });
-    }
-
-    function fadeAudio(targetVolume, duration = 1000, callback) {
-      const startVolume = audio.volume;
-      const startTime = performance.now();
-      function step(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        audio.volume = startVolume + (targetVolume - startVolume) * progress;
-        if (progress < 1) {
-          requestAnimationFrame(step);
-        } else if (callback) callback();
+      function throttle(fn, delay) {
+        let timer;
+        return function() {
+          if (!timer) {
+            timer = setTimeout(() => { fn(); timer = null; }, delay);
+          }
+        };
       }
-      requestAnimationFrame(step);
-    }
 
-    function tryAutoPlay() {
-      audio.volume = 0;
-      audio.play().then(() => {
-        fadeAudio(1, 2000);
-        toggleBtn.textContent = "暂停音乐 ⏸️";
-      }).catch(() => {
-        toggleBtn.textContent = "播放音乐 🎵";
-      });
-    }
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const particleCount = window.innerWidth < 768 ? 15 : 30;
+        if (particles.length !== particleCount) {
+          particles = Array.from({ length: particleCount }, createParticle);
+        }
+      }
 
-    toggleBtn.addEventListener("click", () => {
-      if (audio.paused) {
+      function createParticle() {
+        return {
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.min(10 * Math.random() + 10, window.innerWidth * 0.02),
+          speed: Math.random() + 0.5,
+          opacity: Math.random()
+        };
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(255,100,150,0.6)";
+        ctx.font = "15px sans-serif";
+        particles.forEach(p => {
+          ctx.globalAlpha = p.opacity;
+          ctx.fillText("❤", p.x, p.y);
+          p.y -= p.speed;
+          if (p.y < -20) Object.assign(p, createParticle(), { y: canvas.height + 10 });
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      function updateLoveDays() {
+        const now = new Date();
+        const loveDays = Math.floor((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(CONFIG.startDate.getFullYear(), CONFIG.startDate.getMonth(), CONFIG.startDate.getDate())) / 86400000);
+        loveDaysEl.textContent = loveDays;
+        const nextDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+        setTimeout(updateLoveDays, nextDay - now);
+      }
+
+      function updateBeijingTime() {
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('zh-CN', {
+          timeZone: 'Asia/Shanghai',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          weekday: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false
+        });
+        const parts = formatter.formatToParts(now);
+        const year = parts.find(p => p.type === 'year').value;
+        const month = parts.find(p => p.type === 'month').value;
+        const day = parts.find(p => p.type === 'day').value;
+        const weekday = parts.find(p => p.type === 'weekday').value;
+        const hours = parts.find(p => p.type === 'hour').value;
+        const minutes = parts.find(p => p.type === 'minute').value;
+        const seconds = parts.find(p => p.type === 'second').value;
+        datePartEl.textContent = `${year}年${month}月${day}日 ${weekday}`;
+        timePartEl.textContent = `${hours}:${minutes}:${seconds}`;
+      }
+
+      function typeWriter(text, callback) {
+        quoteEl.innerHTML = '';
+        let i = 0;
+        const interval = setInterval(() => {
+          quoteEl.innerHTML += text.charAt(i);
+          i++;
+          if (i >= text.length) {
+            clearInterval(interval);
+            if (callback) setTimeout(callback, 2000);
+          }
+        }, 210);
+      }
+
+      function playQuotes() {
+        const quote = shuffledQuotes[quoteIndex];
+        typeWriter(quote, () => {
+          quoteIndex = (quoteIndex + 1) % shuffledQuotes.length;
+          if (quoteIndex === 0) shuffledQuotes = [...CONFIG.quotes].sort(() => Math.random() - 0.5);
+          playQuotes();
+        });
+      }
+
+      function fadeAudio(targetVolume, duration = 1000, callback) {
+        const startVolume = audio.volume;
+        const startTime = performance.now();
+        function step(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          audio.volume = startVolume + (targetVolume - startVolume) * progress;
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else if (callback) callback();
+        }
+        requestAnimationFrame(step);
+      }
+
+      function tryAutoPlay() {
+        audio.volume = 0;
         audio.play().then(() => {
           fadeAudio(1, 2000);
           toggleBtn.textContent = "暂停音乐 ⏸️";
-        });
-      } else {
-        fadeAudio(0, 1500, () => {
-          audio.pause();
+        }).catch(() => {
           toggleBtn.textContent = "播放音乐 🎵";
         });
       }
-    });
-    
-    // 粒子动画循环
-    function animateParticles() {
-      drawParticles();
-      requestAnimationFrame(animateParticles);
-    }
 
-    addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+      toggleBtn.addEventListener("click", () => {
+        if (audio.paused) {
+          audio.play().then(() => {
+            fadeAudio(1, 2000);
+            toggleBtn.textContent = "暂停音乐 ⏸️";
+          });
+        } else {
+          fadeAudio(0, 1500, () => {
+            audio.pause();
+            toggleBtn.textContent = "播放音乐 🎵";
+          });
+        }
+      });
 
-    // 页面加载后执行
-    document.addEventListener("DOMContentLoaded", () => {
-      tryAutoPlay();
-      playQuotes();
-      updateCounters(); // 页面初始加载时更新一次
-      setInterval(updateCounters, 1000); // 之后每秒更新一次
-    });
-    
-    // 启动粒子动画
-    animateParticles();
+      toggleBtn.addEventListener("touchstart", () => {}, { passive: true }); // 提升触摸响应
+
+      function animateParticles() {
+        drawParticles();
+        requestAnimationFrame(animateParticles);
+      }
+
+      addEventListener("resize", throttle(resizeCanvas, 200));
+      resizeCanvas();
+
+      document.addEventListener("DOMContentLoaded", () => {
+        tryAutoPlay();
+        playQuotes();
+        updateLoveDays();
+        updateBeijingTime();
+        setInterval(updateBeijingTime, 1000);
+      });
+
+      animateParticles();
+    })();
   </script>
 </body>
 </html>
